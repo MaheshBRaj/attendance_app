@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/attendance_record.dart';
@@ -40,7 +41,7 @@ class AttendanceService {
       await _repository.saveRecord(record);
       return true;
     } catch (e) {
-      print('Error saving attendance: $e');
+      debugPrint('Error saving attendance: $e');
       return false;
     }
   }

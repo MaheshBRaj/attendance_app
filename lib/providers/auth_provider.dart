@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+
 import '../models/user_model.dart';
 import '../repositories/user_repository.dart';
 import '../services/face_recognition_service.dart';
@@ -58,7 +59,7 @@ class AuthProvider extends ChangeNotifier {
 
       return false;
     } catch (e) {
-      print('Authentication error: $e');
+      debugPrint('Authentication error: $e');
       return false;
     }
   }
@@ -71,7 +72,7 @@ class AuthProvider extends ChangeNotifier {
       notifyListeners();
       return true;
     } catch (e) {
-      print('Registration error: $e');
+      debugPrint('Registration error: $e');
       return false;
     }
   }

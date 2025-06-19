@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:attendanceapp/widgets.dart/camera_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
@@ -14,7 +15,7 @@ class RegistrationScreen extends StatefulWidget {
   const RegistrationScreen({super.key});
 
   @override
-  _RegistrationScreenState createState() => _RegistrationScreenState();
+  State<RegistrationScreen> createState() => _RegistrationScreenState();
 }
 
 class _RegistrationScreenState extends State<RegistrationScreen> {
@@ -24,7 +25,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
   final _emailController = TextEditingController();
 
   String _selectedGender = 'Male';
-  DateTime _selectedDate = DateTime.now();
+  DateTime _selectedDate = DateTime.now().subtract(Duration(days: 6250));
   String? _capturedImagePath;
   bool _isLoading = false;
   bool _phoneVerified = false;
@@ -48,7 +49,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               if (!_phoneVerified) ...[
                 _buildPhoneVerificationSection(),
               ] else ...[
-                _buildUserDetailsSection(),
+                !_showUserForm
+                    ? _buildFaceCaptureSection()
+                    : _buildUserDetailsSection(),
               ],
             ],
           ),
@@ -114,16 +117,16 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           style: TextStyle(fontSize: 16, color: Colors.grey[600]),
         ),
         SizedBox(height: 30),
-        // Container(
-        //   height: 300,
-        //   child: CameraWidget(
-        //     onImageCaptured: (imagePath) {
-        //       setState(() {
-        //         _capturedImagePath = imagePath;
-        //       });
-        //     },
-        //   ),
-        // ),
+        SizedBox(
+          height: 300,
+          child: CameraWidget(
+            onImageCaptured: (imagePath) {
+              setState(() {
+                _capturedImagePath = imagePath;
+              });
+            },
+          ),
+        ),
         SizedBox(height: 20),
         if (_capturedImagePath != null) ...[
           Container(
@@ -163,6 +166,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         ),
         SizedBox(height: 30),
         TextFormField(
+          keyboardType: TextInputType.name,
           controller: _nameController,
           decoration: InputDecoration(
             labelText: 'Full Name',
@@ -185,8 +189,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
             border: OutlineInputBorder(),
           ),
           validator: (value) {
-            if (value == null || value.isEmpty)
+            if (value == null || value.isEmpty) {
               return 'Please enter your email';
+            }
             if (!value.contains('@')) return 'Please enter a valid email';
             return null;
           },

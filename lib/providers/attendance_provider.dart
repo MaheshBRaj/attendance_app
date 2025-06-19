@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
+
 import '../models/attendance_record.dart';
 import '../repositories/attendance_repository.dart';
 import '../services/face_recognition_service.dart';
@@ -63,7 +64,7 @@ class AttendanceProvider extends ChangeNotifier {
 
       // Create record
 
-//initial commit
+      //initial commit
       final record = AttendanceRecord(
         id: const Uuid().v4(),
         userId: userId,
@@ -81,7 +82,7 @@ class AttendanceProvider extends ChangeNotifier {
 
       return true;
     } catch (e) {
-      print('Punch in error: $e');
+      debugPrint('Punch in error: $e');
       return false;
     }
   }
@@ -127,10 +128,8 @@ class AttendanceProvider extends ChangeNotifier {
 
       return true;
     } catch (e) {
-      print('Punch out error: $e');
+      debugPrint('Punch out error: $e');
       return false;
     }
   }
-
-  
 }

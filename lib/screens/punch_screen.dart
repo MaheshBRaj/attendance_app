@@ -8,11 +8,12 @@ import '../services/dependency_injection.dart';
 import '../services/face_recognition_service.dart';
 import '../utils/app_routes.dart';
 
+// ...imports stay the same
+
 class PunchScreen extends StatefulWidget {
   const PunchScreen({super.key});
-
   @override
-  _PunchScreenState createState() => _PunchScreenState();
+  State<PunchScreen> createState() => _PunchScreenState();
 }
 
 class _PunchScreenState extends State<PunchScreen> {
@@ -23,16 +24,11 @@ class _PunchScreenState extends State<PunchScreen> {
   @override
   void initState() {
     super.initState();
-    _loadAttendanceData();
-  }
-
-  void _loadAttendanceData() {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final attendanceProvider = Provider.of<AttendanceProvider>(
       context,
       listen: false,
     );
-
     if (authProvider.currentUser != null) {
       attendanceProvider.loadRecords(authProvider.currentUser!.id);
     }
@@ -41,40 +37,28 @@ class _PunchScreenState extends State<PunchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Attendance'),
-        backgroundColor: Colors.blue[600],
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.history),
-            onPressed: () {
-              Navigator.pushNamed(context, AppRoutes.attendanceLog);
-            },
-          ),
-          IconButton(icon: Icon(Icons.logout), onPressed: _logout),
-        ],
-      ),
+      appBar: _buildAppBar(),
       body: Consumer2<AuthProvider, AttendanceProvider>(
-        builder: (context, authProvider, attendanceProvider, child) {
-          if (authProvider.currentUser == null) {
-            return Center(child: CircularProgressIndicator());
-          }
+        builder: (_, auth, attendance, __) {
+          final user = auth.currentUser;
+          if (user == null)
+            return const Center(child: CircularProgressIndicator());
 
           return SingleChildScrollView(
-            padding: EdgeInsets.all(20),
+            padding: const EdgeInsets.all(20),
             child: Column(
               children: [
-                _buildWelcomeCard(authProvider.currentUser!.name),
-                SizedBox(height: 20),
-                _buildStatusCard(attendanceProvider),
-                SizedBox(height: 30),
-                if (!_showCamera) ...[
-                  _buildActionButtons(attendanceProvider),
-                ] else ...[
-                  _buildCameraSection(),
-                ],
-                SizedBox(height: 20),
+                _buildWelcomeCard(user.name),
+                const SizedBox(height: 20),
+                _buildStatusCard(attendance.lastAction),
+                const SizedBox(height: 30),
+                _showCamera
+                    ? _buildCameraSection()
+                    : _buildActionButtons(
+                      attendance.lastAction,
+                      user.id.toString(),
+                    ),
+                const SizedBox(height: 20),
                 _buildViewLogButton(),
               ],
             ),
@@ -84,67 +68,70 @@ class _PunchScreenState extends State<PunchScreen> {
     );
   }
 
-  Widget _buildWelcomeCard(String userName) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: Container(
-        width: double.infinity,
-        padding: EdgeInsets.all(20),
-        child: Column(
-          children: [
-            Icon(Icons.person, size: 50, color: Colors.blue[600]),
-            SizedBox(height: 10),
-            Text(
-              'Welcome, $userName',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            Text(
-              'Ready to mark your attendance?',
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
-            ),
-          ],
+  AppBar _buildAppBar() {
+    return AppBar(
+      title: const Text('Attendance'),
+      backgroundColor: Colors.blue[600],
+      foregroundColor: Colors.white,
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.history),
+          onPressed:
+              () => Navigator.pushNamed(context, AppRoutes.attendanceLog),
         ),
-      ),
+        IconButton(icon: const Icon(Icons.logout), onPressed: _logout),
+      ],
     );
   }
 
-  Widget _buildStatusCard(AttendanceProvider attendanceProvider) {
-    final lastAction = attendanceProvider.lastAction;
-    final canPunchIn = lastAction == null || lastAction == 'punch_out';
+  Widget _buildWelcomeCard(String userName) => _buildCard(
+    icon: Icons.person,
+    title: 'Welcome, $userName',
+    subtitle: 'Ready to mark your attendance?',
+  );
+
+  Widget _buildStatusCard(String? lastAction) {
     final canPunchOut = lastAction == 'punch_in';
+    final statusText = canPunchOut ? 'Currently Working' : 'Ready to Start';
+    final statusColor = canPunchOut ? Colors.green : Colors.orange;
+    final icon = canPunchOut ? Icons.work : Icons.home;
 
+    return _buildCard(
+      icon: icon,
+      title: 'Current Status',
+      subtitle: statusText,
+      subtitleColor: statusColor,
+    );
+  }
+
+  Widget _buildCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    Color? subtitleColor,
+  }) {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: Container(
         width: double.infinity,
-        padding: EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20),
         child: Column(
           children: [
+            Icon(icon, size: 40, color: Colors.blue[600]),
+            const SizedBox(height: 10),
             Text(
-              'Current Status',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              title,
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 15),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  canPunchOut ? Icons.work : Icons.home,
-                  size: 30,
-                  color: canPunchOut ? Colors.green : Colors.orange,
-                ),
-                SizedBox(width: 10),
-                Text(
-                  canPunchOut ? 'Currently Working' : 'Ready to Start',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: canPunchOut ? Colors.green : Colors.orange,
-                  ),
-                ),
-              ],
+            const SizedBox(height: 5),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 16,
+                color: subtitleColor ?? Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -152,70 +139,40 @@ class _PunchScreenState extends State<PunchScreen> {
     );
   }
 
-  Widget _buildActionButtons(AttendanceProvider attendanceProvider) {
-    final lastAction = attendanceProvider.lastAction;
+  Widget _buildActionButtons(String? lastAction, String userId) {
     final canPunchIn = lastAction == null || lastAction == 'punch_out';
     final canPunchOut = lastAction == 'punch_in';
 
     return Column(
       children: [
-        if (canPunchIn) ...[
-          SizedBox(
-            width: double.infinity,
-            height: 60,
-            child: ElevatedButton(
-              onPressed: () => _startPunchAction('punch_in'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                elevation: 5,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.login, size: 30),
-                  SizedBox(width: 10),
-                  Text(
-                    'PUNCH IN',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-        if (canPunchOut) ...[
-          SizedBox(
-            width: double.infinity,
-            height: 60,
-            child: ElevatedButton(
-              onPressed: () => _startPunchAction('punch_out'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                elevation: 5,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.logout, size: 30),
-                  SizedBox(width: 10),
-                  Text(
-                    'PUNCH OUT',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+        if (canPunchIn)
+          _buildPunchButton('punch_in', Icons.login, Colors.green),
+        if (canPunchOut)
+          _buildPunchButton('punch_out', Icons.logout, Colors.red),
       ],
+    );
+  }
+
+  Widget _buildPunchButton(String action, IconData icon, Color color) {
+    return SizedBox(
+      width: double.infinity,
+      height: 60,
+      child: ElevatedButton.icon(
+        onPressed: () => _startPunchAction(action),
+        icon: Icon(icon, size: 30),
+        label: Text(
+          _getPunchText(action),
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          elevation: 5,
+        ),
+      ),
     );
   }
 
@@ -223,51 +180,45 @@ class _PunchScreenState extends State<PunchScreen> {
     return Column(
       children: [
         Text(
-          'Capture Your Face for ${_currentAction.toUpperCase().replaceAll('_', ' ')}',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          'Capture Your Face for ${_getPunchText(_currentAction)}',
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           textAlign: TextAlign.center,
         ),
-        SizedBox(height: 20),
+        const SizedBox(height: 20),
         SizedBox(
           height: 300,
           child: CameraWidget(
             onImageCaptured: (imagePath) {
-              setState(() {
-                _capturedImagePath = imagePath;
-              });
+              setState(() => _capturedImagePath = imagePath);
             },
           ),
         ),
-        SizedBox(height: 20),
-        if (_capturedImagePath != null) ...[
+        const SizedBox(height: 20),
+        if (_capturedImagePath != null)
           ElevatedButton(
             onPressed: _processPunch,
             style: ElevatedButton.styleFrom(
               backgroundColor:
                   _currentAction == 'punch_in' ? Colors.green : Colors.red,
               foregroundColor: Colors.white,
-              padding: EdgeInsets.symmetric(vertical: 15, horizontal: 30),
+              padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
             ),
-            child: Text(
-              'Confirm ${_currentAction.toUpperCase().replaceAll('_', ' ')}',
-            ),
+            child: Text('Confirm ${_getPunchText(_currentAction)}'),
           ),
-          SizedBox(height: 10),
-        ],
+        const SizedBox(height: 10),
         ElevatedButton(
-          onPressed: () {
-            setState(() {
-              _showCamera = false;
-              _capturedImagePath = null;
-              _currentAction = '';
-            });
-          },
+          onPressed:
+              () => setState(() {
+                _showCamera = false;
+                _capturedImagePath = null;
+                _currentAction = '';
+              }),
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.grey,
             foregroundColor: Colors.white,
-            padding: EdgeInsets.symmetric(vertical: 15, horizontal: 30),
+            padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
           ),
-          child: Text('Cancel'),
+          child: const Text('Cancel'),
         ),
       ],
     );
@@ -277,30 +228,22 @@ class _PunchScreenState extends State<PunchScreen> {
     return SizedBox(
       width: double.infinity,
       height: 50,
-      child: OutlinedButton(
-        onPressed: () {
-          Navigator.pushNamed(context, AppRoutes.attendanceLog);
-        },
+      child: OutlinedButton.icon(
+        onPressed: () => Navigator.pushNamed(context, AppRoutes.attendanceLog),
+        icon: Icon(Icons.history, color: Colors.blue[600]),
+        label: Text(
+          'VIEW ATTENDANCE LOG',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.blue[600],
+          ),
+        ),
         style: OutlinedButton.styleFrom(
           side: BorderSide(color: Colors.blue[600]!),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
           ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.history, color: Colors.blue[600]),
-            SizedBox(width: 10),
-            Text(
-              'VIEW ATTENDANCE LOG',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.blue[600],
-              ),
-            ),
-          ],
         ),
       ),
     );
@@ -316,117 +259,92 @@ class _PunchScreenState extends State<PunchScreen> {
 
   Future<void> _processPunch() async {
     if (_capturedImagePath == null) return;
-
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final attendanceProvider = Provider.of<AttendanceProvider>(
-      context,
-      listen: false,
-    );
-    final faceRecognitionService = getIt<FaceRecognitionService>();
+    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final attendance = Provider.of<AttendanceProvider>(context, listen: false);
+    final faceService = getIt<FaceRecognitionService>();
 
     try {
-      final capturedFaceEmbedding = await faceRecognitionService
-          .extractFaceEmbedding(_capturedImagePath!);
-
-      if (capturedFaceEmbedding == null) {
-        _showErrorDialog('Failed to process face image. Please try again.');
+      final capturedEmbedding = await faceService.extractFaceEmbedding(
+        _capturedImagePath!,
+      );
+      if (capturedEmbedding == null) {
+        _showDialog('Error', 'Failed to process face image. Please try again.');
         return;
       }
 
-      bool success = false;
-      if (_currentAction == 'punch_in') {
-        success = await attendanceProvider.punchIn(
-          authProvider.currentUser!.id,
-          authProvider.currentUser!.faceEmbedding,
-          capturedFaceEmbedding,
-        );
-      } else {
-        success = await attendanceProvider.punchOut(
-          authProvider.currentUser!.id,
-          authProvider.currentUser!.faceEmbedding,
-          capturedFaceEmbedding,
-        );
-      }
+      final isPunchIn = _currentAction == 'punch_in';
+      final success =
+          isPunchIn
+              ? await attendance.punchIn(
+                auth.currentUser!.id,
+                auth.currentUser!.faceEmbedding,
+                capturedEmbedding,
+              )
+              : await attendance.punchOut(
+                auth.currentUser!.id,
+                auth.currentUser!.faceEmbedding,
+                capturedEmbedding,
+              );
 
       if (success) {
+        _showDialog('Success', '${_getPunchText(_currentAction)} successful!');
         setState(() {
           _showCamera = false;
           _capturedImagePath = null;
           _currentAction = '';
         });
-        _showSuccessDialog(
-          '${_currentAction.toUpperCase().replaceAll('_', ' ')} successful!',
-        );
       } else {
-        _showErrorDialog('Face verification failed. Please try again.');
+        _showDialog('Error', 'Face verification failed. Please try again.');
       }
-    } catch (e) {
-      _showErrorDialog('An error occurred. Please try again.');
+    } catch (_) {
+      _showDialog('Error', 'An error occurred. Please try again.');
     }
   }
 
-  void _showSuccessDialog(String message) {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text('Success'),
-            content: Text(message),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('OK'),
-              ),
-            ],
-          ),
-    );
-  }
-
-  void _showErrorDialog(String message) {
-    showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text('Error'),
-            content: Text(message),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('OK'),
-              ),
-            ],
-          ),
-    );
-  }
-
   void _logout() {
+    _showDialog(
+      'Logout',
+      'Are you sure you want to logout?',
+      confirmText: 'Logout',
+      onConfirm: () async {
+        final auth = Provider.of<AuthProvider>(context, listen: false);
+        await auth.logout();
+        if (mounted)
+          Navigator.pushReplacementNamed(context, AppRoutes.registration);
+      },
+    );
+  }
+
+  void _showDialog(
+    String title,
+    String message, {
+    String confirmText = 'OK',
+    VoidCallback? onConfirm,
+  }) {
     showDialog(
       context: context,
       builder:
-          (context) => AlertDialog(
-            title: Text('Logout'),
-            content: Text('Are you sure you want to logout?'),
+          (_) => AlertDialog(
+            title: Text(title),
+            content: Text(message),
             actions: [
+              if (onConfirm != null)
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
               TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () async {
-                  final authProvider = Provider.of<AuthProvider>(
-                    context,
-                    listen: false,
-                  );
-                  await authProvider.logout();
-                  Navigator.pushReplacementNamed(
-                    context,
-                    AppRoutes.registration,
-                  );
+                onPressed: () {
+                  Navigator.pop(context);
+                  onConfirm?.call();
                 },
-                child: Text('Logout'),
+                child: Text(confirmText),
               ),
             ],
           ),
     );
   }
+
+  String _getPunchText(String action) =>
+      action.toUpperCase().replaceAll('_', ' ');
 }

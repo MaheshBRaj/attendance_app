@@ -28,7 +28,7 @@ class _AttendanceLogScreenState extends State<AttendanceLogScreen> {
 
     try {
       final records = AttendanceService(AttendanceRepository(StorageService()));
-      // setState(() => _logs = records.);
+      //  setState(() => _logs = records);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to load attendance records')),

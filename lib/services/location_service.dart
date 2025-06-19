@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -7,12 +8,12 @@ class LocationService {
       // Check if location permission is granted
       if (await Permission.location.request().isGranted) {
         return await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high,
+          locationSettings: LocationSettings(accuracy: LocationAccuracy.high),
         );
       }
       return null;
     } catch (e) {
-      print('Error getting location: $e');
+      debugPrint('Error getting location: $e');
       return null;
     }
   }

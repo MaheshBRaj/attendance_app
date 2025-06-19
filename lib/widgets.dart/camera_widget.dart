@@ -1,16 +1,17 @@
-import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:flutter/material.dart';
 import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
+
 import '../main.dart';
 
 class CameraWidget extends StatefulWidget {
   final Function(String) onImageCaptured;
 
-  CameraWidget({required this.onImageCaptured});
+  const CameraWidget({super.key, required this.onImageCaptured});
 
   @override
-  _CameraWidgetState createState() => _CameraWidgetState();
+  State<CameraWidget> createState() => _CameraWidgetState();
 }
 
 class _CameraWidgetState extends State<CameraWidget> {
@@ -46,7 +47,7 @@ class _CameraWidgetState extends State<CameraWidget> {
         });
       }
     } catch (e) {
-      print('Error initializing camera: $e');
+      debugPrint('Error initializing camera: $e');
     }
   }
 
@@ -71,7 +72,7 @@ class _CameraWidgetState extends State<CameraWidget> {
 
       widget.onImageCaptured(imagePath);
     } catch (e) {
-      print('Error capturing image: $e');
+      debugPrint('Error capturing image: $e');
     }
   }
 
