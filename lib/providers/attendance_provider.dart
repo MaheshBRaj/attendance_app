@@ -64,7 +64,7 @@ class AttendanceProvider extends ChangeNotifier {
 
       // Create record
 
-      //initial commit
+   
       final record = AttendanceRecord(
         id: const Uuid().v4(),
         userId: userId,

@@ -1,8 +1,7 @@
-import 'package:attendanceapp/repositories/attendance_repository.dart';
-import 'package:attendanceapp/services/attendance_service.dart';
-import 'package:attendanceapp/services/storage_service.dart';
+import 'package:attendanceapp/providers/attendance_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 
 import '../models/attendance_record.dart';
 
@@ -14,7 +13,7 @@ class AttendanceLogScreen extends StatefulWidget {
 }
 
 class _AttendanceLogScreenState extends State<AttendanceLogScreen> {
-  final List<AttendanceRecord> _logs = [];
+  List<AttendanceRecord> _logs = [];
   bool _isLoading = true;
 
   @override
@@ -27,8 +26,11 @@ class _AttendanceLogScreenState extends State<AttendanceLogScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final records = AttendanceService(AttendanceRepository(StorageService()));
-      //  setState(() => _logs = records);
+      final attendanceProvider = Provider.of<AttendanceProvider>(
+        context,
+        listen: false,
+      );
+      setState(() => _logs = attendanceProvider.records);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to load attendance records')),
